@@ -10,11 +10,13 @@ use camera::{CameraController, CameraControllerPlugin};
 #[allow(unused_imports)]
 use floppy::{FloppyBody, FloppyComponent, FloppyDebugPlugin, FloppyPlugin};
 use moveable::{Moveable, MoveablePlugin};
+use satellite::{Satellite, SatellitePlugin};
 
 pub mod background;
 pub mod camera;
 pub mod floppy;
 pub mod moveable;
+pub mod satellite;
 
 fn main() {
     App::new()
@@ -27,6 +29,7 @@ fn main() {
             MoveablePlugin,
             FloppyPlugin,
             //FloppyDebugPlugin,
+            SatellitePlugin,
             WindowResizePlugin,
         ))
         .add_systems(Startup, setup)
@@ -47,7 +50,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         image: img.clone(),
         set: false,
     });
-    spawn_dude(&mut commands, asset_server);
+    spawn_dude(&mut commands, &asset_server);
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
@@ -64,9 +67,21 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         Ground { size: 256. },
     ));
+    commands.spawn((
+        SpriteBundle {
+            texture: asset_server.load("collider.png"),
+            transform: Transform::from_translation(vec3(25., 10., 10.)),
+            ..default()
+        },
+        Moveable {
+            radius: 50.,
+            velocity: Vec2::ZERO,
+        },
+        Satellite,
+    ));
 }
 
-fn spawn_dude(commands: &mut Commands, asset_server: Res<AssetServer>) {
+fn spawn_dude(commands: &mut Commands, asset_server: &Res<AssetServer>) {
     let collider = asset_server.load("Collider.png");
     let torso = asset_server.load("Torso.png");
     let head = asset_server.load("Head.png");
