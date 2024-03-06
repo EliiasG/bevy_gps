@@ -21,6 +21,9 @@ pub struct Moveable {
     pub velocity: Vec2,
 }
 
+#[derive(Component)]
+pub struct Deletable;
+
 #[derive(Resource)]
 struct CurMoving {
     entity: Option<Entity>,
@@ -29,11 +32,15 @@ struct CurMoving {
 
 fn update_moveables(
     time: Res<Time>,
+    mut commands: Commands,
     mut cur_moving: ResMut<CurMoving>,
     mut window: Query<&mut Window, With<PrimaryWindow>>,
     mouse: Res<ButtonInput<MouseButton>>,
     camera: Query<&Transform, With<CameraController>>,
-    mut moveable_query: Query<(&mut Transform, &mut Moveable, Entity), Without<CameraController>>,
+    mut moveable_query: Query<
+        (&mut Transform, &mut Moveable, Entity, Has<Deletable>),
+        Without<CameraController>,
+    >,
 ) {
     // Amazing example of good code and SRP...
     let mut window = window.single_mut();
@@ -49,7 +56,7 @@ fn update_moveables(
 
     if let Some(moving) = cur_moving.entity {
         window.cursor.icon = CursorIcon::Pointer;
-        let (mut moveable_transform, mut moveable, _) = match moveable_query.get_mut(moving) {
+        let (mut moveable_transform, mut moveable, _, _) = match moveable_query.get_mut(moving) {
             Ok(v) => v,
             Err(_) => return,
         };
@@ -64,7 +71,7 @@ fn update_moveables(
         return;
     }
 
-    for (transform, moveable, entity) in moveable_query.iter_mut() {
+    for (transform, moveable, entity, has_deleteable) in moveable_query.iter_mut() {
         let offset = (transform.translation.xy() - mouse_pos) / camera_transform.scale.xy();
         if offset.length_squared() < moveable.radius.powi(2) {
             window.cursor.icon = CursorIcon::Pointer;
@@ -72,6 +79,8 @@ fn update_moveables(
                 cur_moving.offset = offset;
                 cur_moving.entity = Some(entity);
                 return;
+            } else if mouse.just_pressed(MouseButton::Right) && has_deleteable {
+                commands.entity(entity).despawn_recursive();
             }
         }
     }

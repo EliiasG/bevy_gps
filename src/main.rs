@@ -11,12 +11,14 @@ use camera::{CameraController, CameraControllerPlugin};
 use floppy::{FloppyBody, FloppyComponent, FloppyDebugPlugin, FloppyPlugin};
 use moveable::{Moveable, MoveablePlugin};
 use satellite::{Satellite, SatellitePlugin};
+use ui::UiPlugin;
 
 pub mod background;
 pub mod camera;
 pub mod floppy;
 pub mod moveable;
 pub mod satellite;
+pub mod ui;
 
 fn main() {
     App::new()
@@ -30,6 +32,7 @@ fn main() {
             FloppyPlugin,
             //FloppyDebugPlugin,
             SatellitePlugin,
+            UiPlugin,
             WindowResizePlugin,
         ))
         .add_systems(Startup, setup)
@@ -58,6 +61,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..default()
             },
             texture: img,
+            transform: Transform::from_xyz(0., 0., -100.),
             ..default()
         },
         ImageScaleMode::Tiled {
@@ -66,18 +70,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             stretch_value: 128.,
         },
         Ground { size: 256. },
-    ));
-    commands.spawn((
-        SpriteBundle {
-            texture: asset_server.load("collider.png"),
-            transform: Transform::from_translation(vec3(25., 10., 10.)),
-            ..default()
-        },
-        Moveable {
-            radius: 50.,
-            velocity: Vec2::ZERO,
-        },
-        Satellite,
     ));
 }
 
@@ -145,7 +137,7 @@ fn spawn_dude(commands: &mut Commands, asset_server: &Res<AssetServer>) {
         .spawn((
             SpriteBundle {
                 texture: collider,
-                transform: Transform::from_translation(vec3(0., 0., 1.)),
+                transform: Transform::from_translation(vec3(0., 0., 0.5)),
                 ..default()
             },
             Moveable {
