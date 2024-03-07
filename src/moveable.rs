@@ -38,7 +38,13 @@ fn update_moveables(
     mouse: Res<ButtonInput<MouseButton>>,
     camera: Query<&Transform, With<CameraController>>,
     mut moveable_query: Query<
-        (&mut Transform, &mut Moveable, Entity, Has<Deletable>),
+        (
+            &mut Transform,
+            &mut Moveable,
+            Entity,
+            Has<Deletable>,
+            &InheritedVisibility,
+        ),
         Without<CameraController>,
     >,
 ) {
@@ -56,7 +62,7 @@ fn update_moveables(
 
     if let Some(moving) = cur_moving.entity {
         window.cursor.icon = CursorIcon::Pointer;
-        let (mut moveable_transform, mut moveable, _, _) = match moveable_query.get_mut(moving) {
+        let (mut moveable_transform, mut moveable, _, _, _) = match moveable_query.get_mut(moving) {
             Ok(v) => v,
             Err(_) => return,
         };
@@ -71,8 +77,11 @@ fn update_moveables(
         return;
     }
 
-    for (transform, moveable, entity, has_deleteable) in moveable_query.iter_mut() {
+    for (transform, moveable, entity, has_deleteable, vis) in moveable_query.iter_mut() {
         let offset = (transform.translation.xy() - mouse_pos) / camera_transform.scale.xy();
+        if !vis.get() {
+            continue;
+        }
         if offset.length_squared() < moveable.radius.powi(2) {
             window.cursor.icon = CursorIcon::Pointer;
             if mouse.just_pressed(MouseButton::Left) {

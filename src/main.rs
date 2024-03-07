@@ -10,7 +10,7 @@ use camera::{CameraController, CameraControllerPlugin};
 #[allow(unused_imports)]
 use floppy::{FloppyBody, FloppyComponent, FloppyDebugPlugin, FloppyPlugin};
 use moveable::{Moveable, MoveablePlugin};
-use satellite::{Satellite, SatellitePlugin};
+use satellite::SatellitePlugin;
 use ui::UiPlugin;
 
 pub mod background;
@@ -24,7 +24,7 @@ fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins.set(ImagePlugin {
-                default_sampler: ImageSamplerDescriptor::nearest(),
+                ..default() //default_sampler: ImageSamplerDescriptor::nearest(),
             }),
             CameraControllerPlugin,
             GroundPlugin,
@@ -36,7 +36,13 @@ fn main() {
             WindowResizePlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, update)
+        .add_systems(Update, (update, update_character))
+        .insert_resource(Settings {
+            character_visible: true,
+            ranges_visible: true,
+            graph_visibility: GraphVisibility::All,
+            ranges_offset: 0.,
+        })
         .run()
 }
 
@@ -44,6 +50,34 @@ fn main() {
 struct BackgroundImage {
     image: Handle<Image>,
     set: bool,
+}
+
+#[derive(Eq, PartialEq)]
+pub enum GraphVisibility {
+    None,
+    Some,
+    All,
+}
+
+#[derive(Resource)]
+pub struct Settings {
+    pub character_visible: bool,
+    pub ranges_visible: bool,
+    pub graph_visibility: GraphVisibility,
+    pub ranges_offset: f32,
+}
+
+#[derive(Component)]
+struct Character;
+
+fn update_character(settings: Res<Settings>, mut query: Query<&mut Visibility, With<Character>>) {
+    for mut vis in query.iter_mut() {
+        *vis = if settings.character_visible {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        }
+    }
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -144,6 +178,7 @@ fn spawn_dude(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                 radius: 30.,
                 velocity: vec2(0., 0.),
             },
+            Character,
             FloppyBody::default(),
         ))
         .with_children(|builder| {
